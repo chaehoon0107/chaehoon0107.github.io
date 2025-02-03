@@ -290,6 +290,63 @@
     }
 }
 
+/* 세 번째 페이지 스타일 */
+#gift-page {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: none; /* 처음에는 숨김 */
+            justify-content: center;
+            align-items: center;
+            background-color: rgba(255, 255, 255, 0.8);
+            flex-direction: column; /* 세로로 정렬 */
+        }
+
+        #gift-image {
+            max-width: 80%; /* 화면 크기에 따라 자동 조정 */
+            max-height: 80%; /* 화면 크기에 따라 자동 조정 */
+            border-radius: 20px; /* 모서리 둥글게 */
+            margin-bottom: 20px; /* 버튼과 이미지 사이 여백 */
+        }
+
+        /* 저장하기 버튼 스타일 */
+        #saveImage {
+            padding: 10px 20px;
+            margin-bottom: 10px; /* 카드로 돌아가기 버튼과의 여백 */
+            background-color: #7986cb;
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-family: "Ownglyph_ParkDaHyun";
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+        }
+
+        #saveImage:hover {
+            background-color: #fff;
+            color: #7986cb;
+            border-radius: 10px;
+        }
+
+        /* 카드로 돌아가기 버튼 스타일 */
+        #backToCard {
+            padding: 10px 20px;
+            background-color: #7986cb;
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 16px;
+            font-family: "Ownglyph_ParkDaHyun";
+            transition: background-color 0.3s ease;
+        }
+
+        #backToCard:hover {
+            background-color: #fff;
+            color: #7986cb;
+        }
+
 
 
 </style>
@@ -306,11 +363,8 @@
         <div class="back"></div>
     </div>
     
-    <!-- 비밀번호 입력 박스 추가 -->
     <input type="password" id="password" placeholder="         🗝️" maxlength="4" style="margin-top: 20px; padding: 10px; font-size: 15px;">
-
     <div id="error-message" style="color: rgb(255, 134, 134); display: none;">비밀번호가 틀렸습니다.</div>
-    
     <button id="viewLetter" aria-label="카드 열기">카드 열기</button>
 </div>
 
@@ -322,98 +376,98 @@
     </div>
 </div>
 
+<!-- 세 번째 페이지: 선물 이미지 -->
+<div id="gift-page">
+    <img id="gift-image" src="./image/gift.png" alt="Gift">
+    <button id="saveImage">사진 저장하기</button>
+    <button id="backToCard">카드로 돌아가기</button>
+</div>
+
 <script>
-    
     // 페이지 로드 시 카드 애니메이션 실행
-window.onload = function() {
-const card = document.getElementById('card');
-const recipientText = document.getElementById('recipientText');
-const letterContainer = document.querySelector('.letter-container');
+    window.onload = function() {
+        const card = document.getElementById('card');
+        const recipientText = document.getElementById('recipientText');
+        const letterContainer = document.querySelector('.letter-container');
 
+        card.addEventListener('animationend', () => {
+            card.classList.add('float');
+            recipientText.style.animation = 'fadeIn 1s forwards';
+        });
 
-// 애니메이션 완료 후 둥둥 떠다니는 클래스 추가
-card.addEventListener('animationend', () => {
-    card.classList.add('float'); // 둥둥 떠다니는 효과 추가
-    recipientText.style.animation = 'fadeIn 1s forwards'; // 텍스트 애니메이션 시작
-});
+        createSnowflakes();
 
-// 눈 생성
-createSnowflakes();
+        fetch('./text/index (1).txt')
+            .then(response => {
+                if (!response.ok) throw new Error('네트워크 응답이 좋지 않습니다.');
+                return response.text();
+            })
+            .then(data => {
+                letterContainer.innerHTML = data;
+            })
+            .catch(error => {
+                console.error('파일을 불러오는 중 오류 발생:', error);
+                letterContainer.textContent = '편지 내용을 불러오는 데 실패했습니다.';
+            });
+    };
 
-// index.txt 파일의 내용 불러오기
-fetch('./text/index (1).txt')
-    .then(response => {
-        if (!response.ok) throw new Error('네트워크 응답이 좋지 않습니다.');
-        return response.text();
-    })
-    .then(data => {
-        letterContainer.innerHTML = data; // letter-container에 텍스트 추가 (들여쓰기 유지)
- // letter-container에 텍스트 추가
-    })
-    .catch(error => {
-        console.error('파일을 불러오는 중 오류 발생:', error);
-        letterContainer.textContent = '편지 내용을 불러오는 데 실패했습니다.'; // 오류 처리
-    });
-};
-
-// 편지보기 버튼 클릭 시 두 번째 페이지로 전환
-document.getElementById('viewLetter').addEventListener('click', () => {
-document.getElementById('card-container').style.opacity = 0;
-document.getElementById('letter-page').style.display = 'flex';
-setTimeout(() => {
-document.getElementById('letter-page').style.opacity = 1;
-}, 1000);
-});
-
-// 장식 클릭 시 카드 페이지로 돌아가기
-document.getElementById('ornament').addEventListener('click', () => {
-document.getElementById('letter-page').style.opacity = 0;
-setTimeout(() => {
-document.getElementById('letter-page').style.display = 'none';
-document.getElementById('card-container').style.opacity = 1;
-}, 1000);
-});
-
-// 눈 내리는 효과 생성 함수
-function createSnowflakes() {
-for (let i = 0; i < 100; i++) {
-let snowflake = document.createElement('div');
-snowflake.classList.add('snowflake');
-snowflake.style.left = Math.random() * 100 + 'vw';
-snowflake.style.animationDuration = 5 + Math.random() * 10 + 's';
-snowflake.style.opacity = Math.random();
-snowflake.style.width = snowflake.style.height = Math.random() * 5 + 5 + 'px';
-document.body.appendChild(snowflake);
-}
-}
-// 비밀번호를 확인하는 변수
-const correctPassword = "0206"; // 정해진 비밀번호
+    // 편지보기 버튼 클릭 시 비밀번호 확인
+    const correctPassword = "0206"; 
     const viewLetterButton = document.getElementById('viewLetter');
     const passwordInput = document.getElementById('password');
     const errorMessage = document.getElementById('error-message');
 
-    // 편지보기 버튼 클릭 시 비밀번호 확인
     viewLetterButton.addEventListener('click', () => {
         if (passwordInput.value !== correctPassword) {
-            errorMessage.style.display = 'block'; // 오류 메시지 표시
-            document.getElementById('letter-page').style.display = 'none'; // 두 번째 페이지 숨김
-            document.getElementById('card-container').style.opacity = 1; // 카드 페이지 완전히 보이게
+            errorMessage.style.display = 'block';
+            document.getElementById('letter-page').style.display = 'none';
+            document.getElementById('card-container').style.opacity = 1;
         } else {
-            errorMessage.style.display = 'none'; // 오류 메시지 숨김
-            
-            // 카드 페이지를 서서히 투명하게 만들기
-            document.getElementById('card-container').style.transition = 'opacity 1s ease'; // 애니메이션 효과 추가
-            document.getElementById('card-container').style.opacity = 0; // 카드 페이지 숨김
+            errorMessage.style.display = 'none';
+            document.getElementById('card-container').style.transition = 'opacity 1s ease';
+            document.getElementById('card-container').style.opacity = 0;
 
-            // 두 번째 페이지 표시
             setTimeout(() => {
-                document.getElementById('letter-page').style.display = 'flex'; // 두 번째 페이지 표시
-                document.getElementById('letter-page').style.opacity = 1; // 두 번째 페이지 보이기
-            }, 1000); // 1초 후에 두 번째 페이지로 전환
+                document.getElementById('letter-page').style.display = 'flex';
+                document.getElementById('letter-page').style.opacity = 1;
+            }, 1000);
         }
     });
 
+    // 장식 클릭 시 세 번째 페이지로 전환
+    document.getElementById('ornament').addEventListener('click', () => {
+        document.getElementById('letter-page').style.display = 'none';
+        document.getElementById('gift-page').style.display = 'flex'; // 세 번째 페이지 표시
+    });
 
+    // 카드로 돌아가기 버튼 클릭 시 카드 페이지로 돌아가기
+    document.getElementById('backToCard').addEventListener('click', () => {
+        document.getElementById('gift-page').style.display = 'none'; // 세 번째 페이지 숨김
+        document.getElementById('card-container').style.opacity = 1; // 카드 페이지 보이기
+    });
+
+    // 사진 저장하기 버튼 클릭 시 이미지 저장
+    document.getElementById('saveImage').addEventListener('click', () => {
+        const link = document.createElement('a');
+        link.href = './image/gift.png'; // 이미지 경로
+        link.download = 'gift.png'; // 저장될 파일 이름
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link); // 링크 제거
+    });
+
+    // 눈 내리는 효과 생성 함수
+    function createSnowflakes() {
+        for (let i = 0; i < 100; i++) {
+            let snowflake = document.createElement('div');
+            snowflake.classList.add('snowflake');
+            snowflake.style.left = Math.random() * 100 + 'vw';
+            snowflake.style.animationDuration = 5 + Math.random() * 10 + 's';
+            snowflake.style.opacity = Math.random();
+            snowflake.style.width = snowflake.style.height = Math.random() * 5 + 5 + 'px';
+            document.body.appendChild(snowflake);
+        }
+    }
 </script>
 </body>
- </html>
+</html>
