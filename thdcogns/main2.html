@@ -1,0 +1,156 @@
+<!-- main2.html (사용자 페이지: 파일 다운로드 및 서버 스탯 보기) -->
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>사용자 페이지 – 파일 공유</title>
+  <!-- Google Fonts: JUA -->
+  <link href="https://fonts.googleapis.com/css?family=Jua&display=swap" rel="stylesheet">
+  <style>
+    /* 기본 스타일 및 JUA 폰트 적용 */
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: 'Jua', sans-serif;
+      background: linear-gradient(135deg, #f0f0f5, #ffffff);
+      color: #333;
+    }
+    
+    header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    h1 {
+      margin: 0;
+      font-size: 2em;
+    }
+    .stats {
+      text-align: center;
+      margin-bottom: 20px;
+      font-size: 1.1em;
+    }
+    
+    /* 대쉬보드 영역 (패들렛 스타일) */
+    .dashboard {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .category-group {
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      padding: 10px;
+      background: #ffffff;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .category-group h2 {
+      margin-top: 0;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 5px;
+    }
+    .file-item {
+      border-bottom: 1px solid #f0f0f0;
+      padding: 5px 0;
+      display: flex;
+      flex-direction: column;
+    }
+    .file-item:last-child {
+      border-bottom: none;
+    }
+    .file-item a {
+      color: #0a74da;
+      text-decoration: none;
+      margin-top: 3px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>파일 공유 공간</h1>
+  </header>
+  
+  <!-- 서버 스탯 영역: 총 파일수와 총 용량 표시 -->
+  <div class="stats" id="serverStats">
+    <!-- JS로 동적 업데이트 -->
+  </div>
+  
+  <!-- 파일 대쉬보드 (카테고리별 그룹) -->
+  <div class="dashboard" id="dashboard">
+    <!-- JS로 그룹별로 렌더링 -->
+  </div>
+  
+  <script>
+    const STORAGE_KEY = 'filesData';
+    // 파일 데이터를 저장할 변수
+    let filesData = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+
+    // 서버 스탯 계산 및 표시 함수
+    function updateStats() {
+      const statsDiv = document.getElementById('serverStats');
+      const totalFiles = filesData.length;
+      // 총 용량 합계 (KB 단위로 표시)
+      const totalSize = filesData.reduce((acc, file) => acc + file.size, 0);
+      statsDiv.innerHTML = `공유된 파일: ${totalFiles}개, 총 용량: ${(totalSize/1024).toFixed(2)} KB`;
+    }
+
+    // 대쉬보드 렌더링: 파일들을 카테고리별로 그룹화
+    function renderDashboard() {
+      const dashboard = document.getElementById('dashboard');
+      dashboard.innerHTML = '';
+      
+      // 카테고리별 그룹화 객체 생성
+      const categories = {};
+      filesData.forEach(file => {
+        if (!categories[file.category]) {
+          categories[file.category] = [];
+        }
+        categories[file.category].push(file);
+      });
+      
+      // 각 카테고리 그룹별로 영역 생성
+      for (const category in categories) {
+        const groupDiv = document.createElement('div');
+        groupDiv.className = 'category-group';
+        
+        // 카테고리 제목
+        groupDiv.innerHTML = `<h2>${category}</h2>`;
+        
+        // 해당 카테고리의 파일 목록 생성
+        categories[category].forEach(file => {
+          const fileDiv = document.createElement('div');
+          fileDiv.className = 'file-item';
+          let date = new Date(file.timestamp).toLocaleString();
+          fileDiv.innerHTML = `
+            <strong>${file.name}</strong>
+            <div>용량: ${(file.size/1024).toFixed(2)} KB, 업로드: ${date}</div>
+            <a href="${file.url}" download="${file.name}">다운로드</a>
+          `;
+          groupDiv.appendChild(fileDiv);
+        });
+        
+        dashboard.appendChild(groupDiv);
+      }
+    }
+
+    // 데이터를 새로 고침하는 함수 (외부 업데이트 동기화)
+    function refreshData() {
+      filesData = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+      updateStats();
+      renderDashboard();
+    }
+
+    // storage 이벤트로 다른 창에서의 변경 감지
+    window.addEventListener('storage', (e) => {
+      if (e.key === STORAGE_KEY) {
+        refreshData();
+      }
+    });
+    
+    // 주기적으로 데이터 새로 고침 (예: 2초 간격)
+    setInterval(refreshData, 2000);
+    
+    // 초기 렌더링
+    refreshData();
+  </script>
+</body>
+</html>
