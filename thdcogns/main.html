@@ -1,104 +1,115 @@
-<!-- main.html (관리자 대쉬보드: 파일 업로드 및 삭제) -->
+<!-- main.html (관리자 대쉬보드) -->
 <!DOCTYPE html>
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <title>관리자 파일 대쉬보드</title>
-  <!-- Google Fonts: JUA -->
-  <link href="https://fonts.googleapis.com/css?family=Jua&display=swap" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>관리자 대쉬보드</title>
+  <!-- Google Fonts: JUA 체 적용 -->
+  <link href="https://fonts.googleapis.com/css2?family=JUA&display=swap" rel="stylesheet">
   <style>
-    /* 페이지 기본 스타일 및 JUA 폰트 적용 */
+    /* 전역 폰트, 배경, 레이아웃 설정 */
+    * { box-sizing: border-box; }
     body {
       margin: 0;
-      padding: 20px;
-      font-family: 'Jua', sans-serif;
-      background: linear-gradient(135deg, #f0f0f5, #ffffff);
+      font-family: 'JUA', sans-serif;
+      background-color: #f4f6f8;
       color: #333;
+      padding: 20px;
     }
-    
     header {
       text-align: center;
       margin-bottom: 20px;
     }
-    
-    h1 {
-      margin: 0;
-      font-size: 2em;
-    }
-    
-    /* 업로드 폼 컨테이너 */
-    .upload-form {
+    h1 { margin: 0; font-size: 2em; }
+
+    /* 파일 업로드 영역 */
+    .upload-container {
       display: flex;
-      flex-wrap: wrap;
+      flex-direction: column;
       align-items: center;
-      justify-content: center;
-      margin-bottom: 30px;
+      margin-bottom: 20px;
     }
-    .upload-form input[type="file"] {
-      display: none; /* 숨겨서 사용자에게 커스텀 버튼 사용 */
-    }
-    .upload-form input[type="text"] {
-      padding: 8px;
-      margin: 5px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      width: 200px;
-    }
-    
-    /* CodePen 버튼 스타일 (https://codepen.io/aaroniker/pen/bGVGNrV 참고) */
+    /* CodePen 스타일의 업로드 버튼 */
     .upload-btn {
       position: relative;
       display: inline-block;
       padding: 15px 30px;
-      margin: 5px;
       color: #fff;
       text-transform: uppercase;
-      text-decoration: none;
-      letter-spacing: 2px;
-      background: #0a74da;
-      border-radius: 5px;
-      transition: background 0.3s ease;
+      background: #1abc9c;
+      border: none;
       cursor: pointer;
       overflow: hidden;
+      transition: background 0.3s ease;
+      border-radius: 5px;
+      font-size: 1em;
+      margin-bottom: 10px;
     }
     .upload-btn:hover {
-      background: #095ac2;
+      background: #16a085;
     }
-    .upload-btn:active {
-      background: #074a9e;
+    /* 업로드 버튼 애니메이션 효과 (CodePen 버튼 영감) */
+    .upload-btn::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: rgba(255,255,255,0.2);
+      transform: skewX(-45deg);
+      transition: left 0.5s;
     }
-    
-    /* 대쉬보드 파일 리스트 */
-    .file-list {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 15px;
-      justify-content: center;
+    .upload-btn:hover::before {
+      left: 200%;
     }
-    .file-item {
-      background: #fff;
-      border: 1px solid #ddd;
-      border-radius: 5px;
+    /* 숨겨진 파일 인풋 */
+    #fileInput {
+      display: none;
+    }
+    /* 카테고리 드롭다운 */
+    .category-select {
       padding: 10px;
-      width: 250px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-      word-break: break-all;
+      font-size: 1em;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      margin-top: 10px;
+      background: #fff;
     }
-    .file-item header {
-      font-weight: bold;
-      margin-bottom: 5px;
+    /* 파일 리스트 테이블 */
+    .file-list {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .file-list th, .file-list td {
+      padding: 10px;
+      border: 1px solid #ddd;
+      text-align: center;
+    }
+    .file-list th {
+      background-color: #1abc9c;
+      color: white;
     }
     .delete-btn {
-      margin-top: 10px;
       padding: 5px 10px;
       background: #e74c3c;
       color: #fff;
       border: none;
       border-radius: 3px;
       cursor: pointer;
+      transition: background 0.3s;
     }
     .delete-btn:hover {
       background: #c0392b;
+    }
+    /* 반응형: 모바일에서 테이블 스크롤 */
+    @media (max-width: 600px) {
+      .file-list {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+      }
     }
   </style>
 </head>
@@ -106,118 +117,140 @@
   <header>
     <h1>관리자 대쉬보드</h1>
   </header>
-  
-  <!-- 파일 업로드 영역 -->
-  <div class="upload-form">
+  <div class="upload-container">
+    <!-- CodePen 스타일의 업로드 버튼 -->
+    <button class="upload-btn" id="customUploadBtn">파일 업로드</button>
     <!-- 파일 선택 input (숨김) -->
-    <input type="file" id="fileInput">
-    <!-- 카테고리 입력 -->
-    <input type="text" id="categoryInput" placeholder="카테고리">
-    <!-- CodePen 스타일의 커스텀 업로드 버튼 -->
-    <div class="upload-btn" id="uploadTrigger">파일 업로드</div>
+    <input type="file" id="fileInput" multiple>
+    <!-- 파일 카테고리 선택 -->
+    <select class="category-select" id="fileCategory">
+      <option value="문서">문서</option>
+      <option value="이미지">이미지</option>
+      <option value="영상">영상</option>
+      <option value="기타">기타</option>
+    </select>
   </div>
-  
-  <!-- 업로드된 파일 리스트 (패들렛 대쉬보드 형식) -->
-  <div class="file-list" id="fileList">
-    <!-- 파일 항목들이 JS로 동적 생성됩니다. -->
-  </div>
+  <!-- 업로드된 파일 목록 표시 -->
+  <table class="file-list" id="adminFileList">
+    <thead>
+      <tr>
+        <th>파일명</th>
+        <th>크기 (KB)</th>
+        <th>카테고리</th>
+        <th>업로드 시간</th>
+        <th>삭제</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- 파일 리스트 데이터가 여기 표시됨 -->
+    </tbody>
+  </table>
   
   <script>
-    // 로컬 스토리지를 위한 키 설정
-    const STORAGE_KEY = 'filesData';
+    // 로컬 스토리지 키 이름 정의
+    const STORAGE_KEY = 'fileData';
 
-    // 초기 파일 데이터 읽기 (없으면 빈 배열)
-    let filesData = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-
-    // 로컬 스토리지에 데이터 저장하는 함수
-    function saveFilesData() {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(filesData));
+    // 파일 데이터 초기화, 로컬 스토리지에서 읽기
+    function loadFiles() {
+      const files = localStorage.getItem(STORAGE_KEY);
+      return files ? JSON.parse(files) : [];
     }
 
-    // 파일 리스트를 새로 렌더링하는 함수
-    function renderFileList() {
-      const fileList = document.getElementById('fileList');
-      fileList.innerHTML = ''; // 초기화
+    // 파일 데이터 저장 함수
+    function saveFiles(fileArray) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(fileArray));
+    }
 
-      // 파일 데이터 배열 순회하며 요소 추가
-      filesData.forEach(file => {
-        const fileItem = document.createElement('div');
-        fileItem.className = 'file-item';
+    // 파일 목록 화면에 렌더링
+    function renderFileList() {
+      const fileList = loadFiles();
+      const tbody = document.querySelector('#adminFileList tbody');
+      tbody.innerHTML = '';
+      
+      fileList.forEach(file => {
+        const tr = document.createElement('tr');
+        // 파일명
+        const nameTd = document.createElement('td');
+        nameTd.textContent = file.name;
+        tr.appendChild(nameTd);
         
-        // 파일 정보 표시 (파일명, 크기, 카테고리, 업로드 날짜)
-        let date = new Date(file.timestamp).toLocaleString();
-        fileItem.innerHTML = `
-          <header>${file.name}</header>
-          <div>용량: ${(file.size/1024).toFixed(2)} KB</div>
-          <div>카테고리: ${file.category}</div>
-          <div>업로드: ${date}</div>
-          <a href="${file.url}" download="${file.name}" style="display:inline-block; margin-top:5px; color:#0a74da;">다운로드</a>
-        `;
+        // 파일 크기 (KB 단위, 소수점 첫째자리까지)
+        const sizeTd = document.createElement('td');
+        sizeTd.textContent = (file.size / 1024).toFixed(1);
+        tr.appendChild(sizeTd);
         
-        // 삭제 버튼 (관리자에게만 보임)
-        const deleteBtn = document.createElement('button');
-        deleteBtn.className = 'delete-btn';
-        deleteBtn.textContent = '삭제';
-        deleteBtn.onclick = () => deleteFile(file.id);
-        fileItem.appendChild(deleteBtn);
+        // 카테고리
+        const catTd = document.createElement('td');
+        catTd.textContent = file.category;
+        tr.appendChild(catTd);
         
-        fileList.appendChild(fileItem);
+        // 업로드 시간
+        const timeTd = document.createElement('td');
+        timeTd.textContent = file.time;
+        tr.appendChild(timeTd);
+        
+        // 삭제 버튼
+        const delTd = document.createElement('td');
+        const delBtn = document.createElement('button');
+        delBtn.textContent = '삭제';
+        delBtn.classList.add('delete-btn');
+        delBtn.addEventListener('click', () => deleteFile(file.id));
+        delTd.appendChild(delBtn);
+        tr.appendChild(delTd);
+        
+        tbody.appendChild(tr);
       });
     }
 
-    // 파일 삭제 함수
-    function deleteFile(id) {
-      // 해당 파일 정보를 찾은 후 Blob URL 폐기
-      const index = filesData.findIndex(f => f.id === id);
-      if (index !== -1) {
-        URL.revokeObjectURL(filesData[index].url);
-        filesData.splice(index, 1);
-        saveFilesData();
+    // 파일 삭제 함수: 파일 목록에서 제거, Blob URL 해제, 로컬 스토리지 동기화
+    function deleteFile(fileId) {
+      let fileArray = loadFiles();
+      const fileIndex = fileArray.findIndex(item => item.id === fileId);
+      if (fileIndex > -1) {
+        // Blob URL 해제
+        URL.revokeObjectURL(fileArray[fileIndex].blobUrl);
+        // 해당 항목 삭제
+        fileArray.splice(fileIndex, 1);
+        saveFiles(fileArray);
         renderFileList();
       }
     }
 
-    // 업로드 트리거 버튼 클릭시 file input 클릭 연결
-    document.getElementById('uploadTrigger').addEventListener('click', () => {
+    // 파일 업로드 처리
+    document.getElementById('customUploadBtn').addEventListener('click', () => {
       document.getElementById('fileInput').click();
     });
 
-    // 파일 선택 시 처리
-    document.getElementById('fileInput').addEventListener('change', (event) => {
-      const file = event.target.files[0];
-      const category = document.getElementById('categoryInput').value.trim() || '미분류';
-      if (file) {
-        // 큰 파일로 인한 메모리 이슈 해결을 위해 Blob URL 사용 (FileReader 미사용)
+    // 파일 선택 이벤트 처리
+    document.getElementById('fileInput').addEventListener('change', (e) => {
+      const files = e.target.files;
+      const selectedCategory = document.getElementById('fileCategory').value;
+      let fileArray = loadFiles();
+
+      for (let file of files) {
+        // Blob URL을 이용해 대용량 파일을 메모리에 올리지 않음
         const blobUrl = URL.createObjectURL(file);
-        // 파일 객체 생성 (고유 id는 타임스탬프 사용)
-        const fileObj = {
-          id: Date.now(),
+        const newFile = {
+          id: Date.now() + Math.random(), // 유니크 ID
           name: file.name,
           size: file.size,
-          category: category,
-          url: blobUrl,
-          timestamp: Date.now()
+          category: selectedCategory,
+          time: new Date().toLocaleString(),
+          blobUrl: blobUrl
         };
-        filesData.push(fileObj);
-        saveFilesData();
-        renderFileList();
-        // 파일 입력 및 카테고리 필드 초기화
-        event.target.value = "";
-        document.getElementById('categoryInput').value = "";
+        fileArray.push(newFile);
       }
+      saveFiles(fileArray);
+      renderFileList();
+      // 파일 인풋 초기화
+      e.target.value = "";
     });
 
-    // 스토리지 변경 이벤트 (다른 탭 혹은 페이지 동기화를 위한)
-    window.addEventListener('storage', (e) => {
-      if (e.key === STORAGE_KEY) {
-        filesData = JSON.parse(e.newValue) || [];
-        renderFileList();
-      }
-    });
-
-    // 초기 렌더링 수행
+    // 페이지 초기 렌더링
     renderFileList();
+
+    // 스토리지 이벤트 리스너 (여러 탭 동기화를 위해)
+    window.addEventListener('storage', renderFileList);
   </script>
 </body>
 </html>
-
