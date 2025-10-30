@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>키오스크 도우미</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
+            position: relative;
+        }
+
+        #video-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            background: #000;
+        }
+
+        #camera-feed {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        #canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .overlay-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .guide-box {
+            position: absolute;
+            background: rgba(76, 175, 80, 0.9);
+            color: white;
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: bold;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            transform: translate(-50%, -120%);
+            white-space: nowrap;
+            max-width: 90vw;
+            text-align: center;
+            animation: pulse 2s infinite;
+            z-index: 1000;
+            line-height: 1.4;
+        }
+
+        .guide-box::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-top: 10px solid rgba(76, 175, 80, 0.9);
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: translate(-50%, -120%) scale(1);
+            }
+            50% {
+                transform: translate(-50%, -120%) scale(1.05);
+            }
+        }
+
+        #loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 24px 32px;
+            border-radius: 16px;
+            font-size: 20px;
+            text-align: center;
+            z-index: 2000;
+        }
+
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid white;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 16px auto 0;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        #error {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(244, 67, 54, 0.95);
+            color: white;
+            padding: 24px 32px;
+            border-radius: 16px;
+            font-size: 18px;
+            text-align: center;
+            z-index: 2000;
+            max-width: 90%;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        #status {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            z-index: 1500;
+        }
+    </style>
+</head>
+<body>
+    <div id="video-container">
+        <video id="camera-feed" autoplay playsinline></video>
+        <canvas id="canvas"></canvas>
+        <div class="overlay-container" id="overlay-container"></div>
+    </div>
+
+    <div id="loading">
+        <div>카메라를 준비하는 중...</div>
+        <div class="spinner"></div>
+    </div>
+
+    <div id="error" class="hidden"></div>
+    <div id="status" class="hidden">AI 분석 중...</div>
+
+    <!-- Tesseract.js for OCR -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.1.1/dist/tesseract.min.js"></script>
+
+    <script>
+        const video = document.getElementById('camera-feed');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const overlayContainer = document.getElementById('overlay-container');
+        const loading = document.getElementById('loading');
+        const errorDiv = document.getElementById('error');
+        const statusDiv = document.getElementById('status');
+
+        let worker = null;
+        let isProcessing = false;
+        let animationFrameId = null;
+
+        // 키오스크 관련 키워드 매핑
+        const buttonKeywords = {
+            '주문': '메뉴 선택이 완료되었으면\n이 버튼을 누르세요',
+            '주문하기': '메뉴 선택이 완료되었으면\n이 버튼을 누르세요',
+            '결제': '주문이 완료되었으면\n이 버튼을 눌러 결제하세요',
+            '결제하기': '주문이 완료되었으면\n이 버튼을 눌러 결제하세요',
+            '선택': '원하는 메뉴를\n이 버튼으로 선택하세요',
+            '확인': '선택을 완료하려면\n이 버튼을 누르세요',
+            '취소': '다시 시작하려면\n이 버튼을 누르세요',
+            '포장': '포장 주문은\n이 버튼을 누르세요',
+            '매장': '매장에서 드실 경우\n이 버튼을 누르세요',
+            '카드': '카드로 결제하려면\n이 버튼을 누르세요',
+            '현금': '현금으로 결제하려면\n이 버튼을 누르세요'
+        };
+
+        // 카메라 초기화
+        async function initCamera() {
+            try {
+                const constraints = {
+                    video: {
+                        facingMode: 'environment', // 후면 카메라 사용
+                        width: { ideal: 1920 },
+                        height: { ideal: 1080 }
+                    }
+                };
+
+                const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                video.srcObject = stream;
+
+                video.addEventListener('loadedmetadata', () => {
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    loading.classList.add('hidden');
+                    statusDiv.classList.remove('hidden');
+                    startProcessing();
+                });
+
+            } catch (err) {
+                console.error('카메라 접근 오류:', err);
+                showError('카메라에 접근할 수 없습니다.\n설정에서 카메라 권한을 허용해주세요.');
+            }
+        }
+
+        // Tesseract 초기화
+        async function initTesseract() {
+            try {
+                worker = await Tesseract.createWorker('kor', 1, {
+                    logger: m => console.log(m)
+                });
+                await worker.setParameters({
+                    tessedit_char_whitelist: '가-힣0-9abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ ',
+                });
+            } catch (err) {
+                console.error('OCR 초기화 오류:', err);
+            }
+        }
+
+        // 텍스트 감지 및 가이드 생성
+        async function processFrame() {
+            if (isProcessing || !worker) return;
+            
+            isProcessing = true;
+
+            try {
+                // 현재 프레임을 캔버스에 그리기
+                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                const imageData = canvas.toDataURL('image/png');
+
+                // OCR 실행
+                const { data } = await worker.recognize(imageData);
+                
+                // 기존 가이드 박스 제거
+                overlayContainer.innerHTML = '';
+
+                // 감지된 텍스트 처리
+                if (data.words && data.words.length > 0) {
+                    const videoRect = video.getBoundingClientRect();
+                    const scaleX = videoRect.width / canvas.width;
+                    const scaleY = videoRect.height / canvas.height;
+
+                    data.words.forEach(word => {
+                        const text = word.text.trim();
+                        
+                        // 키워드 매칭
+                        for (const [keyword, guide] of Object.entries(buttonKeywords)) {
+                            if (text.includes(keyword)) {
+                                const bbox = word.bbox;
+                                const centerX = (bbox.x0 + bbox.x1) / 2 * scaleX;
+                                const centerY = bbox.y0 * scaleY;
+
+                                createGuideBox(centerX, centerY, guide);
+                            }
+                        }
+                    });
+                }
+
+            } catch (err) {
+                console.error('프레임 처리 오류:', err);
+            } finally {
+                isProcessing = false;
+            }
+        }
+
+        // 가이드 박스 생성
+        function createGuideBox(x, y, text) {
+            const guideBox = document.createElement('div');
+            guideBox.className = 'guide-box';
+            guideBox.textContent = text;
+            guideBox.style.left = `${x}px`;
+            guideBox.style.top = `${y}px`;
+            overlayContainer.appendChild(guideBox);
+        }
+
+        // 지속적인 처리 시작
+        function startProcessing() {
+            function loop() {
+                processFrame();
+                // 2초마다 OCR 실행 (성능 최적화)
+                setTimeout(() => {
+                    animationFrameId = requestAnimationFrame(loop);
+                }, 2000);
+            }
+            loop();
+        }
+
+        // 에러 표시
+        function showError(message) {
+            loading.classList.add('hidden');
+            errorDiv.textContent = message;
+            errorDiv.classList.remove('hidden');
+        }
+
+        // 초기화
+        async function init() {
+            await initTesseract();
+            await initCamera();
+        }
+
+        // 페이지 로드 시 시작
+        window.addEventListener('load', init);
+
+        // 페이지 언로드 시 정리
+        window.addEventListener('beforeunload', () => {
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+            }
+            if (worker) {
+                worker.terminate();
+            }
+            if (video.srcObject) {
+                video.srcObject.getTracks().forEach(track => track.stop());
+            }
+        });
+    </script>
+</body>
+</html>
