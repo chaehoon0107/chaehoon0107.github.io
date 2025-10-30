@@ -12,27 +12,59 @@
         }
 
         body {
-            width: 100vw;
-            height: 100vh;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Malgun Gothic', sans-serif;
+            background: #1a1a2e;
+            color: white;
             overflow: hidden;
-            font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
-            position: relative;
+            height: 100vh;
+            width: 100vw;
         }
 
-        #video-container {
+        .container {
+            position: relative;
             width: 100%;
             height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            z-index: 10;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .camera-container {
             position: relative;
+            flex: 1;
+            overflow: hidden;
             background: #000;
         }
 
-        #camera-feed {
+        #video {
             width: 100%;
             height: 100%;
             object-fit: cover;
         }
 
         #canvas {
+            display: none;
+        }
+
+        .overlay {
             position: absolute;
             top: 0;
             left: 0;
@@ -41,34 +73,23 @@
             pointer-events: none;
         }
 
-        .overlay-container {
+        .tooltip {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-        }
-
-        .guide-box {
-            position: absolute;
-            background: rgba(76, 175, 80, 0.9);
+            background: rgba(102, 126, 234, 0.95);
             color: white;
             padding: 12px 16px;
             border-radius: 12px;
-            font-size: 18px;
+            font-size: 16px;
             font-weight: bold;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-            transform: translate(-50%, -120%);
-            white-space: nowrap;
-            max-width: 90vw;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+            border: 2px solid white;
+            min-width: 120px;
             text-align: center;
-            animation: pulse 2s infinite;
-            z-index: 1000;
-            line-height: 1.4;
+            animation: fadeIn 0.3s ease-in;
+            z-index: 100;
         }
 
-        .guide-box::after {
+        .tooltip::before {
             content: '';
             position: absolute;
             bottom: -10px;
@@ -78,40 +99,82 @@
             height: 0;
             border-left: 10px solid transparent;
             border-right: 10px solid transparent;
-            border-top: 10px solid rgba(76, 175, 80, 0.9);
+            border-top: 10px solid rgba(102, 126, 234, 0.95);
         }
 
-        @keyframes pulse {
-            0%, 100% {
-                transform: translate(-50%, -120%) scale(1);
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.8);
             }
-            50% {
-                transform: translate(-50%, -120%) scale(1.05);
+            to {
+                opacity: 1;
+                transform: scale(1);
             }
         }
 
-        #loading {
+        .controls {
+            padding: 15px;
+            background: #16213e;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.3);
+        }
+
+        .btn {
+            flex: 1;
+            max-width: 150px;
+            padding: 15px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: white;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .btn:active {
+            transform: scale(0.95);
+        }
+
+        .status {
+            position: absolute;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.7);
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            z-index: 5;
+        }
+
+        .loading {
+            display: none;
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: rgba(0, 0, 0, 0.8);
-            color: white;
-            padding: 24px 32px;
-            border-radius: 16px;
-            font-size: 20px;
-            text-align: center;
-            z-index: 2000;
+            z-index: 20;
         }
 
         .spinner {
-            border: 4px solid rgba(255, 255, 255, 0.3);
+            border: 4px solid rgba(255,255,255,0.3);
             border-top: 4px solid white;
             border-radius: 50%;
-            width: 40px;
-            height: 40px;
+            width: 50px;
+            height: 50px;
             animation: spin 1s linear infinite;
-            margin: 16px auto 0;
         }
 
         @keyframes spin {
@@ -119,221 +182,238 @@
             100% { transform: rotate(360deg); }
         }
 
-        #error {
+        .highlight-box {
             position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(244, 67, 54, 0.95);
-            color: white;
-            padding: 24px 32px;
-            border-radius: 16px;
-            font-size: 18px;
-            text-align: center;
-            z-index: 2000;
-            max-width: 90%;
+            border: 3px solid #667eea;
+            background: rgba(102, 126, 234, 0.2);
+            pointer-events: none;
+            animation: pulse 2s infinite;
         }
 
-        .hidden {
-            display: none !important;
-        }
-
-        #status {
-            position: absolute;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.7);
-            color: white;
-            padding: 12px 20px;
-            border-radius: 20px;
-            font-size: 14px;
-            z-index: 1500;
+        @keyframes pulse {
+            0%, 100% {
+                box-shadow: 0 0 20px rgba(102, 126, 234, 0.8);
+            }
+            50% {
+                box-shadow: 0 0 40px rgba(102, 126, 234, 1);
+            }
         }
     </style>
 </head>
 <body>
-    <div id="video-container">
-        <video id="camera-feed" autoplay playsinline></video>
-        <canvas id="canvas"></canvas>
-        <div class="overlay-container" id="overlay-container"></div>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 키오스크 도우미</h1>
+            <p>키오스크 화면을 비춰주세요</p>
+        </div>
+
+        <div class="camera-container">
+            <video id="video" autoplay playsinline></video>
+            <canvas id="canvas"></canvas>
+            <div class="overlay" id="overlay"></div>
+            <div class="status" id="status">카메라 준비 중...</div>
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="btn btn-primary" id="startBtn">시작하기</button>
+            <button class="btn btn-secondary" id="toggleBtn">카메라 전환</button>
+        </div>
     </div>
 
-    <div id="loading">
-        <div>카메라를 준비하는 중...</div>
-        <div class="spinner"></div>
-    </div>
-
-    <div id="error" class="hidden"></div>
-    <div id="status" class="hidden">AI 분석 중...</div>
-
-    <!-- Tesseract.js for OCR -->
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.1.1/dist/tesseract.min.js"></script>
-
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
     <script>
-        const video = document.getElementById('camera-feed');
+        const video = document.getElementById('video');
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
-        const overlayContainer = document.getElementById('overlay-container');
+        const overlay = document.getElementById('overlay');
+        const status = document.getElementById('status');
         const loading = document.getElementById('loading');
-        const errorDiv = document.getElementById('error');
-        const statusDiv = document.getElementById('status');
+        const startBtn = document.getElementById('startBtn');
+        const toggleBtn = document.getElementById('toggleBtn');
 
+        let stream = null;
+        let scanning = false;
+        let currentCamera = 'environment';
         let worker = null;
-        let isProcessing = false;
-        let animationFrameId = null;
 
-        // 키오스크 관련 키워드 매핑
-        const buttonKeywords = {
-            '주문': '메뉴 선택이 완료되었으면\n이 버튼을 누르세요',
-            '주문하기': '메뉴 선택이 완료되었으면\n이 버튼을 누르세요',
-            '결제': '주문이 완료되었으면\n이 버튼을 눌러 결제하세요',
-            '결제하기': '주문이 완료되었으면\n이 버튼을 눌러 결제하세요',
-            '선택': '원하는 메뉴를\n이 버튼으로 선택하세요',
-            '확인': '선택을 완료하려면\n이 버튼을 누르세요',
-            '취소': '다시 시작하려면\n이 버튼을 누르세요',
-            '포장': '포장 주문은\n이 버튼을 누르세요',
-            '매장': '매장에서 드실 경우\n이 버튼을 누르세요',
-            '카드': '카드로 결제하려면\n이 버튼을 누르세요',
-            '현금': '현금으로 결제하려면\n이 버튼을 누르세요'
+        // 키오스크 버튼 키워드와 설명 매핑
+        const buttonDescriptions = {
+            '주문': '원하는 메뉴를 선택하고 주문하는 버튼입니다',
+            '주문하기': '원하는 메뉴를 선택하고 주문하는 버튼입니다',
+            '메뉴': '다양한 음식 메뉴를 볼 수 있는 버튼입니다',
+            '결제': '주문한 메뉴의 금액을 지불하는 버튼입니다',
+            '결제하기': '주문한 메뉴의 금액을 지불하는 버튼입니다',
+            '카드': '신용카드나 체크카드로 결제하는 버튼입니다',
+            '현금': '현금으로 결제하는 버튼입니다',
+            '포장': '음식을 가져가기 위해 포장하는 옵션입니다',
+            '매장': '매장에서 드시는 옵션입니다',
+            '취소': '현재 작업을 취소하고 처음으로 돌아갑니다',
+            '확인': '선택한 내용을 최종 확인하는 버튼입니다',
+            '이전': '이전 화면으로 돌아가는 버튼입니다',
+            '다음': '다음 단계로 진행하는 버튼입니다',
+            '선택': '원하는 항목을 선택하는 버튼입니다',
+            '추가': '메뉴나 옵션을 더 추가하는 버튼입니다',
+            '삭제': '선택한 항목을 제거하는 버튼입니다',
+            '쿠폰': '할인 쿠폰을 사용하는 버튼입니다',
+            '포인트': '적립된 포인트를 사용하는 버튼입니다',
+            '영수증': '결제 완료 후 영수증을 출력하는 버튼입니다'
         };
 
-        // 카메라 초기화
-        async function initCamera() {
+        // Tesseract 초기화
+        async function initTesseract() {
+            worker = await Tesseract.createWorker('kor', 1, {
+                logger: m => console.log(m)
+            });
+        }
+
+        // 카메라 시작
+        async function startCamera() {
             try {
+                if (stream) {
+                    stream.getTracks().forEach(track => track.stop());
+                }
+
                 const constraints = {
                     video: {
-                        facingMode: 'environment', // 후면 카메라 사용
+                        facingMode: currentCamera,
                         width: { ideal: 1920 },
                         height: { ideal: 1080 }
                     }
                 };
 
-                const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                stream = await navigator.mediaDevices.getUserMedia(constraints);
                 video.srcObject = stream;
-
-                video.addEventListener('loadedmetadata', () => {
-                    canvas.width = video.videoWidth;
-                    canvas.height = video.videoHeight;
-                    loading.classList.add('hidden');
-                    statusDiv.classList.remove('hidden');
-                    startProcessing();
-                });
-
-            } catch (err) {
-                console.error('카메라 접근 오류:', err);
-                showError('카메라에 접근할 수 없습니다.\n설정에서 카메라 권한을 허용해주세요.');
-            }
-        }
-
-        // Tesseract 초기화
-        async function initTesseract() {
-            try {
-                worker = await Tesseract.createWorker('kor', 1, {
-                    logger: m => console.log(m)
-                });
-                await worker.setParameters({
-                    tessedit_char_whitelist: '가-힣0-9abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ ',
-                });
-            } catch (err) {
-                console.error('OCR 초기화 오류:', err);
-            }
-        }
-
-        // 텍스트 감지 및 가이드 생성
-        async function processFrame() {
-            if (isProcessing || !worker) return;
-            
-            isProcessing = true;
-
-            try {
-                // 현재 프레임을 캔버스에 그리기
-                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-                const imageData = canvas.toDataURL('image/png');
-
-                // OCR 실행
-                const { data } = await worker.recognize(imageData);
                 
-                // 기존 가이드 박스 제거
-                overlayContainer.innerHTML = '';
+                status.textContent = '카메라 준비 완료! 시작하기를 눌러주세요';
+                status.style.background = 'rgba(40, 167, 69, 0.8)';
+            } catch (error) {
+                console.error('카메라 오류:', error);
+                status.textContent = '카메라 접근 권한을 허용해주세요';
+                status.style.background = 'rgba(220, 53, 69, 0.8)';
+            }
+        }
 
-                // 감지된 텍스트 처리
+        // 텍스트 인식 및 표시
+        async function scanAndDisplay() {
+            if (!scanning) return;
+
+            loading.style.display = 'block';
+            
+            // 캔버스에 비디오 프레임 캡처
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            ctx.drawImage(video, 0, 0);
+
+            try {
+                // OCR 수행
+                const { data } = await worker.recognize(canvas);
+                
+                // 기존 오버레이 클리어
+                overlay.innerHTML = '';
+
+                // 인식된 텍스트 처리
                 if (data.words && data.words.length > 0) {
-                    const videoRect = video.getBoundingClientRect();
-                    const scaleX = videoRect.width / canvas.width;
-                    const scaleY = videoRect.height / canvas.height;
-
+                    status.textContent = `${data.words.length}개의 텍스트 발견`;
+                    
                     data.words.forEach(word => {
                         const text = word.text.trim();
                         
-                        // 키워드 매칭
-                        for (const [keyword, guide] of Object.entries(buttonKeywords)) {
+                        // 버튼 키워드 찾기
+                        for (const [keyword, description] of Object.entries(buttonDescriptions)) {
                             if (text.includes(keyword)) {
-                                const bbox = word.bbox;
-                                const centerX = (bbox.x0 + bbox.x1) / 2 * scaleX;
-                                const centerY = bbox.y0 * scaleY;
-
-                                createGuideBox(centerX, centerY, guide);
+                                createTooltip(word.bbox, keyword, description);
+                                break;
                             }
                         }
                     });
+                } else {
+                    status.textContent = '텍스트를 찾는 중...';
                 }
+            } catch (error) {
+                console.error('OCR 오류:', error);
+                status.textContent = '인식 오류 발생';
+            }
 
-            } catch (err) {
-                console.error('프레임 처리 오류:', err);
-            } finally {
-                isProcessing = false;
+            loading.style.display = 'none';
+
+            // 계속 스캔
+            if (scanning) {
+                setTimeout(scanAndDisplay, 2000); // 2초마다 스캔
             }
         }
 
-        // 가이드 박스 생성
-        function createGuideBox(x, y, text) {
-            const guideBox = document.createElement('div');
-            guideBox.className = 'guide-box';
-            guideBox.textContent = text;
-            guideBox.style.left = `${x}px`;
-            guideBox.style.top = `${y}px`;
-            overlayContainer.appendChild(guideBox);
+        // 툴팁 생성
+        function createTooltip(bbox, keyword, description) {
+            // 비디오 크기 대비 실제 화면 크기 비율 계산
+            const scaleX = video.offsetWidth / video.videoWidth;
+            const scaleY = video.offsetHeight / video.videoHeight;
+
+            // 하이라이트 박스
+            const highlight = document.createElement('div');
+            highlight.className = 'highlight-box';
+            highlight.style.left = `${bbox.x0 * scaleX}px`;
+            highlight.style.top = `${bbox.y0 * scaleY}px`;
+            highlight.style.width = `${(bbox.x1 - bbox.x0) * scaleX}px`;
+            highlight.style.height = `${(bbox.y1 - bbox.y0) * scaleY}px`;
+            overlay.appendChild(highlight);
+
+            // 툴팁
+            const tooltip = document.createElement('div');
+            tooltip.className = 'tooltip';
+            tooltip.innerHTML = `<strong>${keyword}</strong><br>${description}`;
+            
+            // 툴팁 위치 (텍스트 위에 표시)
+            const centerX = (bbox.x0 + bbox.x1) / 2 * scaleX;
+            const topY = bbox.y0 * scaleY;
+            
+            tooltip.style.left = `${centerX}px`;
+            tooltip.style.top = `${Math.max(topY - 80, 10)}px`;
+            tooltip.style.transform = 'translateX(-50%)';
+            
+            overlay.appendChild(tooltip);
         }
 
-        // 지속적인 처리 시작
-        function startProcessing() {
-            function loop() {
-                processFrame();
-                // 2초마다 OCR 실행 (성능 최적화)
-                setTimeout(() => {
-                    animationFrameId = requestAnimationFrame(loop);
-                }, 2000);
+        // 이벤트 리스너
+        startBtn.addEventListener('click', async () => {
+            if (!scanning) {
+                if (!worker) {
+                    status.textContent = 'AI 모델 로딩 중...';
+                    await initTesseract();
+                }
+                scanning = true;
+                startBtn.textContent = '정지하기';
+                startBtn.className = 'btn btn-secondary';
+                status.textContent = '스캔 중...';
+                scanAndDisplay();
+            } else {
+                scanning = false;
+                startBtn.textContent = '시작하기';
+                startBtn.className = 'btn btn-primary';
+                status.textContent = '정지됨';
+                overlay.innerHTML = '';
             }
-            loop();
-        }
+        });
 
-        // 에러 표시
-        function showError(message) {
-            loading.classList.add('hidden');
-            errorDiv.textContent = message;
-            errorDiv.classList.remove('hidden');
-        }
+        toggleBtn.addEventListener('click', () => {
+            currentCamera = currentCamera === 'environment' ? 'user' : 'environment';
+            startCamera();
+        });
 
-        // 초기화
-        async function init() {
-            await initTesseract();
-            await initCamera();
-        }
+        // 페이지 로드 시 카메라 시작
+        window.addEventListener('load', () => {
+            startCamera();
+        });
 
-        // 페이지 로드 시 시작
-        window.addEventListener('load', init);
-
-        // 페이지 언로드 시 정리
+        // 페이지 종료 시 정리
         window.addEventListener('beforeunload', () => {
-            if (animationFrameId) {
-                cancelAnimationFrame(animationFrameId);
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
             }
             if (worker) {
                 worker.terminate();
-            }
-            if (video.srcObject) {
-                video.srcObject.getTracks().forEach(track => track.stop());
             }
         });
     </script>
